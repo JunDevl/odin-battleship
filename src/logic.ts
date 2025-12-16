@@ -5,15 +5,12 @@ type StringCoordinate = `${number}:${number}`
 export class Ship {
   readonly owner: Player;
 
-  readonly coordinates: [number, number][] = [];
-  #hitCoordinates: [number, number][] = [];
+  coordinates: Map<StringCoordinate, [number, number]> = new Map();
+  hitCoordinates: Map<StringCoordinate, [number, number]> = new Map();
 
-  readonly state: 'active' | 'sunk';
+  state: 'active' | 'sunk';
 
-  constructor(owner: Player, ...coordinates: [number, number, number, number]) {
-    const [startX, startY] = [coordinates[0], coordinates[1]];
-    const [endX, endY] = [coordinates[2], coordinates[3]];
-
+  constructor(owner: Player, startX: number, startY: number, endX: number, endY: number) {
     if (startX - endX !== 0 && startY - endY !== 0) throw new Error("Only horizontal and vertical ships are allowed");
 
     if (startX < 0 || endX < 0 || startY < 0 || endY < 0) throw new Error("Negative coordinates are invalid");
@@ -25,10 +22,10 @@ export class Ship {
     const forEachCoordinates = (start: number, end: number, orientation: "horizontal" | "vertical") => {
       for (let i = start; i <= end; end - start >= 0 ? i++ : i--) {
         if (orientation === "horizontal") {
-          this.coordinates.push([i, startY]);
+          this.coordinates.set(`${i}:${startY}`, [i, startY]);
           continue;
         }
-        this.coordinates.push([startX, i]);
+        this.coordinates.set(`${startX}:${i}`, [startX, i]);
       }
     }
     
@@ -40,51 +37,114 @@ export class Ship {
       forEachCoordinates(startY, endY, "vertical");
     }
 
-    if (this.coordinates.length < 2) throw new Error("A ship can't have a length of less than two");
+    if (this.coordinates.size < 2) throw new Error("A ship can't have a length of less than two");
 
-    if (this.coordinates.length > 4) throw new Error("A ship can't have a length of more than four");
+    if (this.coordinates.size > 4) throw new Error("A ship can't have a length of more than four");
     
     this.owner = owner;
     this.state = 'active';
   }
 
-  //hit(coordinates()) 
+  hitSelf(x: number, y: number) {
+    if (this.state === "sunk") throw new Error("Can't hit a ship that has already sunken");
+
+    this.hitCoordinates.set(`${x}:${y}`, [x, y]);
+
+    this.state = this.hitCoordinates.size === this.coordinates.size ? "sunk" : "active";
+  }
 }
 
+
+type GameboardStyle = "pvp" | "pve";
+type Gamemode = "ship placement" | "bombing";
 export class Gameboard {
+  player1: Player;
+  player2: Player;
+
+  style: GameboardStyle;
+
+  gamemode: Gamemode = "ship placement";
+  currentPlayerTurn: Player;
+
   shipCoordinates: Map<StringCoordinate, Ship> = new Map();
+  winner: Player | null = null;
 
-  constructor(player1: Player, player2: Player) {
-    const randShip = new Ship(player1, 0, 0, 2, 0);
-    const randShip2 = new Ship(player2, 3, 3, 3, 6);
+  constructor(player1: Player, player2: Player, style: GameboardStyle) {
+    this.player1 = player1;
+    this.player2 = player2;
 
-    for (let coordinate of randShip.coordinates) {
-      const [x, y] = coordinate;
-      this.shipCoordinates.set(`${x}:${y}`, randShip);
-    }
+    this.style = style;
 
-    for (let coordinate of randShip2.coordinates) {
-      const [x, y] = coordinate;
-      this.shipCoordinates.set(`${x}:${y}`, randShip2);
-    }
+    this.currentPlayerTurn = player1;
   }
 
-  recieveAttack(coordinate: [number, number]) {
-    const [x, y] = coordinate
-    const hitShip = this.shipCoordinates.get(`${x}:${y}`);
+  changeTurn() {
+    if (this.gamemode === "ship placement") {
+      if (this.currentPlayerTurn.ownedShips.size < 5) return;
+    
+      const allowedShipsLength = [2, 3, 3, 4, 5];
 
-    if (!hitShip) return;
+      const ownedShips = Object.values(this.currentPlayerTurn.ownedShips);
 
-    //hitShip.hit();
+      ownedShips.forEach((ship) => {
+        allowedShipsLength.splice(ship.length, 1);
+      })
+
+      if (allowedShipsLength.length > 0)
+        throw new Error(`${
+          ownedShips.reduce((prev, next) => <unknown>`${prev.coordinates.size}, ${next.coordinates.size}` as Ship)
+        } aren't valid lengths of every ship that a player can own`);
+    
+      this.currentPlayerTurn = this.player1 && this.player2;
+
+      if (this.currentPlayerTurn === this.player2) this.gamemode = "bombing";
+
+      return;
+    }
+
+    this.currentPlayerTurn = this.player1 && this.player2;
   }
 }
 
+type PlayerKind = "npc" | "person"
 export class Player {
-  //ownedShips: Map<StringCoordinate, Ship>;
-  //missedShots: Set<StringCoordinate>;
-  //sunkShips: number;
+  name: string;
 
-  constructor() {
+  type: PlayerKind
 
+  ownedShips: Map<StringCoordinate, Ship> = new Map();
+  sunkShips: Set<Ship> = new Set();
+
+  missedShots: Set<StringCoordinate> = new Set();
+
+  constructor(type: PlayerKind, name?: string) {
+    this.type = type;
+
+    if (type === "npc") {
+      // do some stuff to generate random ships
+      this.name = name ?? "randomBotName";
+    }
+
+    this.name = name ?? "unnamed";
+  }
+
+  putShip(ownerPlayerNumber: 1 | 2, startX: number, startY: number, endX: number, endY: number) {    
+    const newShip = new Ship(this, startX, startY, endX, endY);
+
+    for (let coordinate of Object.values(newShip.coordinates)) {
+      const [x, y] = coordinate;
+      if (this.ownedShips.has(`${x}:${y}`)) throw new Error("Owned ships cannot overlap");
+      this.ownedShips.set(`${x}:${y}`, newShip);
+    }
+  }
+
+  recieveAttack(x: number, y: number) {
+    const hitShip = this.ownedShips.get(`${x}:${y}`);
+
+    if (!hitShip) return hitShip;
+
+    hitShip.hitSelf(x, y);
+
+    return !hitShip;
   }
 }
