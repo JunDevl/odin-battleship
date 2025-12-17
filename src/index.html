@@ -8,7 +8,22 @@
 </head>
 
 <body>
-
+  <h1>Welcome to the best Battleship game in the web!</h1>
+  <h2>Current player: <span id="player-name"></span></h2>
+  <div id="ship-selection">
+    <label for="ships">Select a ship: </label>
+    <select name="ships" id="ships">
+      <option disabled selected hidden>-</option>
+      <option value="2">Destroyer (2)</option>
+      <option value="3">Submarine (3)</option>
+      <option value="3">Cruiser (3)</option>
+      <option value="4">Battleship (4)</option>
+      <option value="5">Carrier (5)</option>
+    </select>
+  </div>
+  <ul class="grid">
+  </ul>
+  <div class="commands">Press R to rotate or spin your mousewheel to do the same!</div>
 </body>
 
 </html>

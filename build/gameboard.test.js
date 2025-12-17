@@ -35,5 +35,15 @@ it("can change state based on a new attack being made", () => {
     expect(testP1.ownedShips.get("0:4")?.hitCoordinates.size).toBeGreaterThan(0);
 });
 it("can set a winner", () => {
+    testP2.recieveAttack(3, 3);
+    testP2.recieveAttack(0, 2);
+    testP2.recieveAttack(1, 0);
+    testP2.recieveAttack(5, 3);
+    testP2.recieveAttack(6, 8);
+    const uniqueShips = new Set([...testP2.ownedShips.values()]);
+    expect(testP2.sunkShips.size).toBe(uniqueShips.size);
+    console.log(testGameboard.gamemode);
+    testGameboard.changeTurn();
+    expect(testGameboard.winner).toBeTruthy();
 });
 //# sourceMappingURL=gameboard.test.js.map

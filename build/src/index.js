@@ -12,5 +12,13 @@ testP1.putShip(6, 8, 6, 9);
 const bot = new logic_1.Player("npc", "kuma");
 const testpveGameboard = new logic_1.Gameboard(testP1, bot, "pve");
 testpveGameboard.changeTurn();
-console.log(testpveGameboard.gamemode);
+board.gamemode = "bombing";
+board.changeTurn();
+testP1.recieveAttack(3, 3);
+testP1.recieveAttack(0, 2);
+testP1.recieveAttack(1, 0);
+testP1.recieveAttack(5, 3);
+testP1.recieveAttack(6, 8);
+board.changeTurn();
+console.log(board.winner);
 //# sourceMappingURL=index.js.map

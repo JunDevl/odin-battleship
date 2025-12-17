@@ -50,5 +50,19 @@ it("can change state based on a new attack being made", () => {
 })
 
 it("can set a winner", () => {
-  
+  testP1.recieveAttack(3, 3);
+  testP1.recieveAttack(0, 2);
+  testP1.recieveAttack(1, 0);
+  testP1.recieveAttack(5, 3);
+  testP1.recieveAttack(6, 8);
+
+  const uniqueShips = new Set([...testP1.ownedShips.values()]);
+
+  expect(testP1.sunkShips.size).toBe(uniqueShips.size);
+
+  console.log(testGameboard.gamemode, testGameboard.currentPlayerTurn);
+
+  testGameboard.changeTurn();
+
+  expect(testGameboard.winner).toBeTruthy();
 }) 

@@ -131,6 +131,7 @@ export class Player {
     if (type === "npc") {
       // do some stuff to generate random ships
       this.name = name ?? "randomBotName";
+      return;
     }
 
     this.name = name ?? "unnamed";
@@ -151,6 +152,7 @@ export class Player {
 
     if (!targetShip) return !!targetShip;
 
+    this.sunkShips.add(targetShip);
     targetShip.hitSelf(x, y);
 
     return !!targetShip;

@@ -1,23 +1,33 @@
-//import "./style.css"
-import { Gameboard, Player } from "./logic";
+import "./style.css";
 
-const testP1 = new Player("person");
-const testP2 = new Player("npc");
+const gameboardGrid = document.querySelector("ul.grid") as HTMLDivElement;
 
-const board = new Gameboard(testP1, testP2, "pvp");
+generateGrid();
 
-testP1.putShip(3, 3, 3, 7);
-testP1.putShip(0, 2, 0, 5);
-testP1.putShip(1, 0, 3, 0);
-testP1.putShip(5, 3, 7, 3);
-testP1.putShip(6, 8, 6, 9);
+gameboardGrid.addEventListener("mouseover", (e) => {
+  const element = e.target as HTMLElement;
 
-const bot = new Player("npc", "kuma");
+  if (element.className === "cell") {
+    element.style.backgroundColor = "yellow";
+  }
+})
 
-const testpveGameboard = new Gameboard(testP1, bot, "pve");
+gameboardGrid.addEventListener("mouseout", (e) => {
+  const element = e.target as HTMLElement;
 
-testpveGameboard.changeTurn();
+  if (element.className === "cell") {
+    element.style.backgroundColor = "rgb(195, 255, 255)"
+  }
+})
 
-console.log(testpveGameboard.gamemode);
+function generateGrid() {
+  for (let row = 1; row <= 10; row++) {
+    for (let column = 1; column <= 10; column++) {
+      const cell = document.createElement("li");
+      cell.id = `${column}:${row}`;
+      cell.className = "cell";
 
-//const test = testP1.recieveAttack(0, 4);
+      gameboardGrid.appendChild(cell);
+    }
+  }
+}

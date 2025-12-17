@@ -60,16 +60,17 @@ class Gameboard {
         this.currentPlayerTurn = player1;
     }
     changeTurn() {
+        const MAXIMUM_SHIPS_ALLOWED_PER_PLAYER = 5;
         if (this.gamemode === "ship placement") {
             const uniqueOwnedShips = new Set([...this.currentPlayerTurn.ownedShips.values()]);
-            if (uniqueOwnedShips.size < 5)
+            if (uniqueOwnedShips.size < MAXIMUM_SHIPS_ALLOWED_PER_PLAYER)
                 return;
-            const allowedShipsLength = [2, 3, 3, 4, 5];
+            const ALLOWED_SHIPS_LENGTH = [2, 3, 3, 4, 5];
             uniqueOwnedShips.forEach(ship => {
-                const index = allowedShipsLength.indexOf(ship.coordinates.size);
-                allowedShipsLength.splice(index, 1);
+                const index = ALLOWED_SHIPS_LENGTH.indexOf(ship.coordinates.size);
+                ALLOWED_SHIPS_LENGTH.splice(index, 1);
             });
-            if (allowedShipsLength.length > 0)
+            if (ALLOWED_SHIPS_LENGTH.length > 0)
                 throw new Error(`Count of lengths don't match the constraint of every kind of ship that a player can own in this game`);
             if (this.currentPlayerTurn === this.player2 || this.player2.type === "npc")
                 this.gamemode = "bombing";
@@ -77,7 +78,12 @@ class Gameboard {
                 this.currentPlayerTurn = this.player1 && this.player2;
             return;
         }
-        this.currentPlayerTurn = this.player1 && this.player2;
+        const nextPlayer = this.currentPlayerTurn === this.player1 ? this.player2 : this.player1;
+        if (nextPlayer.sunkShips.size === MAXIMUM_SHIPS_ALLOWED_PER_PLAYER) {
+            this.winner = this.currentPlayerTurn;
+            return;
+        }
+        this.currentPlayerTurn = nextPlayer;
     }
 }
 exports.Gameboard = Gameboard;
@@ -91,6 +97,7 @@ class Player {
         this.type = type;
         if (type === "npc") {
             this.name = name ?? "randomBotName";
+            return;
         }
         this.name = name ?? "unnamed";
     }
@@ -107,6 +114,7 @@ class Player {
         const targetShip = this.ownedShips.get(`${x}:${y}`);
         if (!targetShip)
             return !!targetShip;
+        this.sunkShips.add(targetShip);
         targetShip.hitSelf(x, y);
         return !!targetShip;
     }
