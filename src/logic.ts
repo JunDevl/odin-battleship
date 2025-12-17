@@ -39,7 +39,7 @@ export class Ship {
 
     if (this.coordinates.size < 2) throw new Error("A ship can't have a length of less than two");
 
-    if (this.coordinates.size > 4) throw new Error("A ship can't have a length of more than four");
+    if (this.coordinates.size > 5) throw new Error("A ship can't have a length of more than five");
     
     this.owner = owner;
     this.state = 'active';
@@ -80,24 +80,23 @@ export class Gameboard {
 
   changeTurn() {
     if (this.gamemode === "ship placement") {
-      if (this.currentPlayerTurn.ownedShips.size < 5) return;
+      const uniqueOwnedShips = new Set([...this.currentPlayerTurn.ownedShips.values()])
+
+      if (uniqueOwnedShips.size < 5) return;
     
       const allowedShipsLength = [2, 3, 3, 4, 5];
 
-      const ownedShips = Object.values(this.currentPlayerTurn.ownedShips);
-
-      ownedShips.forEach((ship) => {
-        allowedShipsLength.splice(ship.length, 1);
+      uniqueOwnedShips.forEach(ship => {
+        const index = allowedShipsLength.indexOf(ship.coordinates.size);
+        allowedShipsLength.splice(index, 1);
       })
 
-      if (allowedShipsLength.length > 0)
-        throw new Error(`${
-          ownedShips.reduce((prev, next) => <unknown>`${prev.coordinates.size}, ${next.coordinates.size}` as Ship)
-        } aren't valid lengths of every ship that a player can own`);
+      if (allowedShipsLength.length > 0) 
+        throw new Error(`Count of lengths don't match the constraint of every kind of ship that a player can own in this game`);
     
-      this.currentPlayerTurn = this.player1 && this.player2;
+      if (this.currentPlayerTurn === this.player2 || this.player2.type === "npc") this.gamemode = "bombing";
 
-      if (this.currentPlayerTurn === this.player2) this.gamemode = "bombing";
+      if (this.player2.type === "person") this.currentPlayerTurn = this.player1 && this.player2;
 
       return;
     }
@@ -128,23 +127,23 @@ export class Player {
     this.name = name ?? "unnamed";
   }
 
-  putShip(ownerPlayerNumber: 1 | 2, startX: number, startY: number, endX: number, endY: number) {    
+  putShip(startX: number, startY: number, endX: number, endY: number) {    
     const newShip = new Ship(this, startX, startY, endX, endY);
 
-    for (let coordinate of Object.values(newShip.coordinates)) {
+    newShip.coordinates.forEach(coordinate => {
       const [x, y] = coordinate;
       if (this.ownedShips.has(`${x}:${y}`)) throw new Error("Owned ships cannot overlap");
       this.ownedShips.set(`${x}:${y}`, newShip);
-    }
+    })
   }
 
   recieveAttack(x: number, y: number) {
-    const hitShip = this.ownedShips.get(`${x}:${y}`);
+    const targetShip = this.ownedShips.get(`${x}:${y}`);
 
-    if (!hitShip) return hitShip;
+    if (!targetShip) return !!targetShip;
 
-    hitShip.hitSelf(x, y);
+    targetShip.hitSelf(x, y);
 
-    return !hitShip;
+    return !!targetShip;
   }
 }
