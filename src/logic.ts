@@ -17,7 +17,7 @@ export class Ship {
 
     const limit = maxBoardSize - 1;
 
-    if (startX > limit || endX > limit || startY > limit || endY > limit) throw new Error("Cooridnate can't exceed the size of the board");
+    if (startX > limit || endX > limit || startY > limit || endY > limit) throw new Error("Coordinate can't exceed the size of the board");
 
     const forEachCoordinates = (start: number, end: number, orientation: "horizontal" | "vertical") => {
       for (let i = start; i <= end; end - start >= 0 ? i++ : i--) {
@@ -96,9 +96,11 @@ export class Gameboard {
       if (ALLOWED_SHIPS_LENGTH.length > 0) 
         throw new Error(`Count of lengths don't match the constraint of every kind of ship that a player can own in this game`);
     
-      if (this.currentPlayerTurn === this.player2 || this.player2.type === "npc") this.gamemode = "bombing";
+      if (this.currentPlayerTurn === this.player2 || this.player2.type === "npc") 
+        this.gamemode = "bombing";
 
-      if (this.player2.type === "person") this.currentPlayerTurn = this.player1 && this.player2;
+      if (this.player2.type === "person") 
+        this.currentPlayerTurn = this.player1 && this.player2;
 
       return;
     }
@@ -116,7 +118,7 @@ export class Gameboard {
 
 type PlayerKind = "npc" | "person"
 export class Player {
-  name: string;
+  name?: string | null;
 
   type: PlayerKind
 
@@ -125,7 +127,7 @@ export class Player {
 
   missedShots: Set<StringCoordinate> = new Set();
 
-  constructor(type: PlayerKind, name?: string) {
+  constructor(type: PlayerKind, name?: string | null) {
     this.type = type;
 
     if (type === "npc") {
